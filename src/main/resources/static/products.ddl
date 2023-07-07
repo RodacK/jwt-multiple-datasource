@@ -1,0 +1,1 @@
+create table products(name varchar_ignorecase(50) not null primary key,description varchar_ignorecase(500) not null);
