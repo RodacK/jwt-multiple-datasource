@@ -7,4 +7,5 @@ import lombok.NoArgsConstructor;
 public class UserLoginRequest {
     private String nick;
     private String password;
+    private String account;
 }

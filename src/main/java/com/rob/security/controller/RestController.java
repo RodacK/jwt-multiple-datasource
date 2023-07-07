@@ -1,7 +1,6 @@
 package com.rob.security.controller;
 
-import com.rob.security.jdbc.JdbcProductsFactory;
-import com.rob.security.model.Product;
+import com.rob.security.jdbc.JdbcManagerFactory;
 import com.rob.security.model.UserLoginRequest;
 import com.rob.security.model.UserLoginResponse;
 import com.rob.security.service.JwtService;
@@ -10,10 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,20 +21,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class RestController {
 
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsManager userDetailsManager;
     private final JwtService jwtService;
-    private final JdbcProductsFactory jdbcProductsFactory;
+    private final JdbcManagerFactory jdbcManagerFactory;
 
     @PostMapping("/login")
     public UserLoginResponse createToken(@RequestBody UserLoginRequest authenticationRequest) throws Exception {
         try {
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(authenticationRequest.getNick(), authenticationRequest.getPassword());
             authenticationManager.authenticate(authentication);
-        } catch (BadCredentialsException e) {
+        } catch (Exception e) {
             throw new Exception("Invalid username or password", e);
         }
-        UserDetails userDetails = userDetailsManager.loadUserByUsername(authenticationRequest.getNick());
-        String token = jwtService.createToken(userDetails);
+        UserDetails userDetails = jdbcManagerFactory.getUserManager(JdbcManagerFactory.ACCOUNTS.valueOf(authenticationRequest.getAccount())).loadUserByUsername(authenticationRequest.getNick());
+        String token = jwtService.createToken(userDetails, JdbcManagerFactory.ACCOUNTS.valueOf(authenticationRequest.getAccount()));
         return new UserLoginResponse(token);
     }
 
@@ -49,7 +46,7 @@ public class RestController {
     @GetMapping("/products/{name}")
     public ResponseEntity getProduct(HttpSession session, @PathVariable String name) {
         try {
-            return new ResponseEntity<>(jdbcProductsFactory.getConfig((String) session.getAttribute("user")).loadProductByName(name), HttpStatus.OK);
+            return new ResponseEntity<>(jdbcManagerFactory.getProductConfig(JdbcManagerFactory.ACCOUNTS.valueOf((String) session.getAttribute("account"))).loadProductByName(name), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(e,HttpStatus.INTERNAL_SERVER_ERROR);
         }

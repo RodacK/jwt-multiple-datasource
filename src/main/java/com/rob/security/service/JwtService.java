@@ -1,5 +1,6 @@
 package com.rob.security.service;
 
+import com.rob.security.jdbc.JdbcManagerFactory;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -22,11 +23,12 @@ public class JwtService {
         SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
 
-    public String createToken(UserDetails userDetails) {
+    public String createToken(UserDetails userDetails, JdbcManagerFactory.ACCOUNTS account) {
         String username = userDetails.getUsername();
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         return Jwts.builder()
                 .setSubject(username)
+                .claim("account", account)
                 .claim(AUTHORITIES, authorities)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
@@ -54,6 +56,14 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public String extractAccount(String token) {
+        return Jwts.parser()
+                .setSigningKey(SECRET_KEY)
+                .parseClaimsJws(token)
+                .getBody()
+                .get("account", String.class);
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities(String token) {

@@ -19,7 +19,6 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DataSourceConfiguration {
-
     @Bean
     @Primary
     public DataSource usersDataSource() {
@@ -65,12 +64,11 @@ public class DataSourceConfiguration {
                 .roles("USER")
                 .build();
         UserDetails user2 = User.withDefaultPasswordEncoder()
-                .username("beta")
-                .password("beta")
+                .username("test")
+                .password("test")
                 .roles("USER")
                 .build();
         JdbcUserDetailsManager users = new JdbcUserDetailsManager(dataSource);
-        users.createUser(user1);
         users.createUser(user2);
         return users;
     }
